@@ -1,0 +1,12 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+
+# Личное и чужое - наружу не уходит никогда
+starter/config/supplier.yaml
+starter/config/contractors.md
+starter/data/
+starter/out/
+starter/templates/*.docx
+references/

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Конструктор документов</title>
+<style>
+  :root { --line:#dcd7cd; --ink:#23201c; --muted:#6f6a61; --accent:#8a6a3b; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px; background:#faf8f5; color:var(--ink);
+         font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  fieldset { border:1px solid var(--line); border-radius:10px; padding:16px; margin:0 0 16px; background:#fff; }
+  legend { padding:0 8px; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input, select, textarea { width:100%; padding:8px 10px; border:1px solid var(--line);
+         border-radius:7px; font:inherit; background:#fff; color:var(--ink); }
+  textarea { min-height:90px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 14px; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0 40px; }
+  button { padding:10px 18px; border:1px solid var(--accent); border-radius:8px;
+           background:var(--accent); color:#fff; font:inherit; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--accent); }
+  .warn { background:#fff6e6; border:1px solid #e8d3a3; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:14px; }
+  .msg { border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:14px; white-space:pre-wrap; }
+  .msg.err { background:#fdecec; border:1px solid #e9b4b4; }
+  .msg.ok  { background:#eef7ec; border:1px solid #b7d9b0; }
+  .hint { font-size:12px; color:var(--muted); margin-top:4px; }
+  #qr img { max-width:190px; border:1px solid var(--line); border-radius:8px; background:#fff; padding:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Конструктор документов</h1>
+  <p class="sub">Форма → готовый .docx. Подстановка детерминированная: что ввёл, то и в документе.</p>
+  <!--BANNER-->
+  <div id="msg"></div>
+
+  <form id="f" method="post" action="/generate">
+    <fieldset>
+      <legend>Документ</legend>
+      <div class="row3">
+        <div>
+          <label>Тип документа</label>
+          <select name="doc_type" id="doc_type"><!--DOC_TYPES--></select>
+        </div>
+        <div>
+          <label>№ документа</label>
+          <input name="num" id="num" placeholder="заполнится автоматически">
+          <div class="hint">Пусто = следующий свободный за дату.</div>
+        </div>
+        <div>
+          <label>Дата документа</label>
+          <input type="date" name="doc_date" id="doc_date" required>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Контрагент</legend>
+      <label>Вставь текст карточки предприятия — поля заполнятся сами</label>
+      <textarea id="card" placeholder="Наименование: ООО «...»&#10;ИНН: ...&#10;БИК: ..."></textarea>
+      <div class="actions" style="margin:10px 0 0">
+        <button type="button" class="ghost" onclick="recognize()">Распознать</button>
+        <button type="button" class="ghost" onclick="fromBase()">Взять из базы по названию</button>
+      </div>
+
+      <label>Наименование</label>
+      <input name="customer_name" id="customer_name" required>
+      <div class="row">
+        <div><label>ИНН/КПП</label><input name="customer_inn_kpp" id="customer_inn_kpp" required></div>
+        <div><label>ОГРН</label><input name="customer_ogrn" id="customer_ogrn"></div>
+      </div>
+      <label>Юридический адрес</label>
+      <input name="customer_legal_addr" id="customer_legal_addr" required>
+      <label>Почтовый адрес</label>
+      <input name="customer_postal_addr" id="customer_postal_addr">
+      <div class="row">
+        <div><label>Банк</label><input name="customer_bank" id="customer_bank"></div>
+        <div><label>БИК</label><input name="customer_bik" id="customer_bik"></div>
+      </div>
+      <div class="row">
+        <div><label>Расчётный счёт</label><input name="customer_rs" id="customer_rs"></div>
+        <div><label>Корр. счёт</label><input name="customer_ks" id="customer_ks"></div>
+      </div>
+      <div class="row">
+        <div><label>Телефон</label><input name="customer_phone" id="customer_phone"></div>
+        <div><label>Подпись (Фамилия И.О.)</label><input name="signer_short" id="signer_short"></div>
+      </div>
+      <div class="row">
+        <div><label>В лице (род. падеж)</label><input name="signer_clause" id="signer_clause"
+             placeholder="в лице генерального директора Иванова Ивана Ивановича"></div>
+        <div><label>Действует на основании</label><input name="signer_basis" id="signer_basis" placeholder="Устава"></div>
+      </div>
+      <label>Должность для подписи</label>
+      <input name="signer_role_nom" id="signer_role_nom" placeholder="Генеральный директор">
+    </fieldset>
+
+    <!-- СЕКЦИИ ТИПА. Скрытая секция ОБЯЗАНА быть disabled, иначе её поля
+         уезжают на сервер и перебивают активные (docs/09-gotchas.md, №1). -->
+    <fieldset data-section="subject">
+      <legend>Предмет</legend>
+      <label>Предмет договора</label>
+      <textarea name="subject" id="subject"></textarea>
+    </fieldset>
+
+    <fieldset data-section="services_text">
+      <legend>Состав услуг (Приложение №1)</legend>
+      <label>Одна строка = один пункт</label>
+      <textarea name="services_text" id="services_text"></textarea>
+    </fieldset>
+
+    <fieldset data-section="single_date">
+      <legend>Срок</legend>
+      <label>Дата оказания услуг</label>
+      <input type="date" name="date_from">
+    </fieldset>
+
+    <fieldset data-section="date_range">
+      <legend>Период</legend>
+      <div class="row">
+        <div><label>С</label><input type="date" name="date_from"></div>
+        <div><label>По</label><input type="date" name="date_to"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Деньги</legend>
+      <div class="row3">
+        <div><label>Сумма, ₽ (целое)</label><input name="total" id="total" required placeholder="100000"></div>
+        <div data-section="prepay"><label>Аванс, %</label><input name="prepay_percent" value="0"></div>
+        <div data-section="closing_doc"><label>Закрывающий документ</label>
+          <input name="closing_doc" value="Акт оказанных услуг"></div>
+      </div>
+      <label>Основание для счёта (если без договора)</label>
+      <input name="osnovanie" placeholder="Например: оплата по оферте от ...">
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="ghost" onclick="check()">Проверить</button>
+      <button type="submit">Скачать договор</button>
+      <button type="button" onclick="post('/invoice')">Счёт (PDF)</button>
+      <button type="button" onclick="post('/akt')">Акт</button>
+      <button type="button" class="ghost" onclick="qr()">Показать QR оплаты</button>
+    </div>
+    <div id="qr"></div>
+  </form>
+</div>
+
+<script>
+const F = document.getElementById('f');
+const MSG = document.getElementById('msg');
+
+function say(text, ok) {
+  MSG.innerHTML = text ? '<div class="msg ' + (ok ? 'ok' : 'err') + '">' + text + '</div>' : '';
+}
+
+/* Переключение типа: показать свои секции, ОСТАЛЬНЫЕ спрятать И задизейблить.
+   Именно disabled, а не только display:none — скрытое, но живое поле
+   отправляется на сервер и молча перебивает значение активной секции. */
+async function applyType() {
+  const key = document.getElementById('doc_type').value;
+  const info = await (await fetch('/doc-type/' + key)).json();
+  const active = new Set(info.form_sections || []);
+  document.querySelectorAll('[data-section]').forEach(node => {
+    const on = active.has(node.dataset.section);
+    node.style.display = on ? '' : 'none';
+    node.querySelectorAll('input, textarea, select').forEach(el => { el.disabled = !on; });
+  });
+  if (!document.getElementById('subject').value) {
+    document.getElementById('subject').value = info.subject_default || '';
+  }
+  if (!document.getElementById('services_text').value) {
+    document.getElementById('services_text').value = (info.services_default || []).join('\n');
+  }
+}
+
+async function refreshNumber() {
+  const date = document.getElementById('doc_date').value;
+  if (!date) return;
+  const r = await (await fetch('/next-number?date=' + date)).json();
+  if (r.number) document.getElementById('num').placeholder = r.number + ' (следующий свободный)';
+}
+
+function payload() { return new FormData(F); }
+
+async function recognize() {
+  const body = new FormData();
+  body.append('text', document.getElementById('card').value);
+  const r = await (await fetch('/recognize', { method: 'POST', body })).json();
+  let filled = 0;
+  for (const [key, value] of Object.entries(r.fields || {})) {
+    const el = document.getElementById(key);
+    if (el) { el.value = value; filled++; }
+  }
+  const warn = (r.warnings || []).join('\n');
+  say('Распознано полей: ' + filled + (warn ? '\n\n' + warn : ''), !warn);
+}
+
+async function fromBase() {
+  const q = document.getElementById('customer_name').value || document.getElementById('card').value;
+  const r = await (await fetch('/contractor?q=' + encodeURIComponent(q))).json();
+  const keys = Object.keys(r);
+  if (!keys.length) { say('В базе config/contractors.md никого не нашлось по запросу.', false); return; }
+  keys.forEach(k => { const el = document.getElementById(k); if (el) el.value = r[k]; });
+  say('Подставлено из базы: ' + r.customer_name, true);
+}
+
+async function check() {
+  const r = await (await fetch('/check', { method: 'POST', body: payload() })).json();
+  const errors = r.errors || [], warnings = r.warnings || [];
+  if (!errors.length && !warnings.length) { say('Проверка пройдена: документ можно отдавать.', true); return; }
+  say([...errors.map(e => '✗ ' + e), ...warnings.map(w => '⚠ ' + w)].join('\n'), !errors.length);
+}
+
+async function qr() {
+  const r = await (await fetch('/qr-preview', { method: 'POST', body: payload() })).json();
+  if (r._error) { say(r._error, false); return; }
+  document.getElementById('qr').innerHTML =
+    '<img src="' + r.data_uri + '"><div class="hint">' + r.payload + '</div>';
+}
+
+/* Скачивание отдельной кнопкой: форма одна, а документов из неё несколько. */
+async function post(url) {
+  const res = await fetch(url, { method: 'POST', body: payload() });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); say(e._error || 'Ошибка', false); return; }
+  const blob = await res.blob();
+  const name = (res.headers.get('content-disposition') || '').split('filename=')[1] || 'document';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/"/g, '');
+  a.click();
+  say('Файл сформирован.', true);
+}
+
+document.getElementById('doc_type').addEventListener('change', applyType);
+document.getElementById('doc_date').addEventListener('change', refreshNumber);
+document.getElementById('doc_date').value = new Date().toISOString().slice(0, 10);
+applyType();
+refreshNumber();
+</script>
+</body>
+</html>
