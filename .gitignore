@@ -9,4 +9,5 @@ starter/config/contractors.md
 starter/data/
 starter/out/
 starter/templates/*.docx
-references/
+starter/references/*
+!starter/references/README.md
