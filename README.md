@@ -59,7 +59,7 @@
 Склонируй методологию documents-blueprint и веди меня по ней как персональный
 инженер по документам.
 
-1. Выполни: git clone https://github.com/<owner>/documents-blueprint
+1. Выполни: git clone https://github.com/dimaffg7-spec/documents-blueprint
    Затем прочитай documents-blueprint/README.md, все файлы в
    documents-blueprint/docs/ и documents-blueprint/prompts/, а также
    documents-blueprint/.claude/skills/document-factory/SKILL.md.
