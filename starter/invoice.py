@@ -9,7 +9,6 @@ QR по ГОСТ Р 56042 — это ОБЫЧНЫЙ ПЕРЕВОД ПО РЕКВ
 считывает камерой. Не эквайринг, не платёжный шлюз: денег через тебя не проходит,
 подключать ничего не нужно. Клиент наводит камеру и платит на твой счёт.
 """
-import base64
 import io
 
 import qrcode
@@ -68,11 +67,6 @@ def qr_png_bytes(payload):
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
-
-
-def qr_data_uri(payload):
-    """QR как data-URI — для предпросмотра в браузере."""
-    return "data:image/png;base64," + base64.b64encode(qr_png_bytes(payload)).decode("ascii")
 
 
 def build_invoice_context(form, supplier, number, contract_number=None, contract_date=None):

@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 import numbering
 from catalog import load_closing_types, load_doc_types, load_supplier, supplier_is_example
 from context import build_context, date_compact
-from invoice import build_invoice_context, qr_data_uri, qr_png_bytes
+from invoice import build_invoice_context, qr_png_bytes
 from render import docx_to_pdf, render_docx
 from requisites import check_requisites, find_contractor, parse_requisites
 from validate import check_document
@@ -171,14 +171,3 @@ async def invoice(request: Request):
     target = pdf or path
     return FileResponse(target, filename=target.name)
 
-
-@app.post("/qr-preview")
-async def qr_preview(request: Request):
-    """Предпросмотр платёжного QR до генерации счёта — проверить сумму и
-    назначение платежа глазами."""
-    form = await form_dict(request)
-    try:
-        ctx = build_invoice_context(form, load_supplier(), form.get("invoice_num") or "0")
-    except ValueError as e:
-        return JSONResponse({"_error": str(e)}, status_code=400)
-    return {"data_uri": qr_data_uri(ctx["qr_payload"]), "payload": ctx["qr_payload"]}

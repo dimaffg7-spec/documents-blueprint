@@ -10,6 +10,11 @@ if [ ! -d .venv ]; then
   .venv/bin/pip install -q -r requirements.txt
 fi
 
+if [ ! -f config/supplier.yaml ]; then
+  echo "→ реквизиты ещё не заданы: сервис пойдёт на примере с нулями."
+  echo "  Настроить: .venv/bin/python setup.py"
+fi
+
 if [ ! -f templates/dogovor_services.docx ]; then
   echo "→ собираю демо-шаблоны"
   .venv/bin/python build_demo_templates.py

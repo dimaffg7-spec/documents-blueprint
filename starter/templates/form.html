@@ -28,7 +28,6 @@
   .msg.err { background:#fdecec; border:1px solid #e9b4b4; }
   .msg.ok  { background:#eef7ec; border:1px solid #b7d9b0; }
   .hint { font-size:12px; color:var(--muted); margin-top:4px; }
-  #qr img { max-width:190px; border:1px solid var(--line); border-radius:8px; background:#fff; padding:6px; }
 </style>
 </head>
 <body>
@@ -143,9 +142,7 @@
       <button type="submit">Скачать договор</button>
       <button type="button" onclick="post('/invoice')">Счёт (PDF)</button>
       <button type="button" onclick="post('/akt')">Акт</button>
-      <button type="button" class="ghost" onclick="qr()">Показать QR оплаты</button>
     </div>
-    <div id="qr"></div>
   </form>
 </div>
 
@@ -213,13 +210,6 @@ async function check() {
   const errors = r.errors || [], warnings = r.warnings || [];
   if (!errors.length && !warnings.length) { say('Проверка пройдена: документ можно отдавать.', true); return; }
   say([...errors.map(e => '✗ ' + e), ...warnings.map(w => '⚠ ' + w)].join('\n'), !errors.length);
-}
-
-async function qr() {
-  const r = await (await fetch('/qr-preview', { method: 'POST', body: payload() })).json();
-  if (r._error) { say(r._error, false); return; }
-  document.getElementById('qr').innerHTML =
-    '<img src="' + r.data_uri + '"><div class="hint">' + r.payload + '</div>';
 }
 
 /* Скачивание отдельной кнопкой: форма одна, а документов из неё несколько. */
